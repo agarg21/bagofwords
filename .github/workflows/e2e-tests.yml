@@ -23,6 +23,7 @@ jobs:
       fail-fast: false
       matrix:
         db: [sqlite, postgres]
+        shard: [0, 1]
 
     steps:
     - uses: actions/checkout@v7
@@ -59,6 +60,8 @@ jobs:
     - name: Run E2E tests
       working-directory: ./backend
       env:
+        E2E_SHARD_TOTAL: 2
+        E2E_SHARD_INDEX: ${{ matrix.shard }}
         TESTING: "true"
         ENVIRONMENT: "production"
         OPENAI_API_KEY_TEST: ${{ secrets.OPENAI_API_KEY_TEST }}

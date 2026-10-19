@@ -159,6 +159,30 @@ def pytest_sessionstart(session):
     gc.freeze()
 
 
+@pytest.hookimpl(trylast=True)
+def pytest_collection_modifyitems(config, items):
+    """Keep only this CI shard's test files when E2E_SHARD_TOTAL > 1 (no-op when unset).
+
+    Shards by test file (crc32 of the path) so module fixtures stay together and
+    the controller and every xdist worker compute the same subset.
+    """
+    import zlib
+
+    total = int(os.environ.get("E2E_SHARD_TOTAL", "1") or 1)
+    if total <= 1:
+        return
+    index = int(os.environ.get("E2E_SHARD_INDEX", "0") or 0)
+    if not 0 <= index < total:
+        raise pytest.UsageError(f"E2E_SHARD_INDEX={index} must be in [0, {total})")
+    keep, drop = [], []
+    for item in items:
+        shard = zlib.crc32(item.nodeid.split("::")[0].encode()) % total
+        (keep if shard == index else drop).append(item)
+    if drop:
+        config.hook.pytest_deselected(items=drop)
+        items[:] = keep
+
+
 def pytest_configure(config):
     """Configure pytest markers."""
     # Export the selected backend so pytest-xdist workers pick it up at
