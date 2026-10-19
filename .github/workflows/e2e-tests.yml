@@ -1,10 +1,7 @@
 name: e2e tests
 
 on:
-  push:
-    branches: [ main ]
-  pull_request:
-    branches: [ main ]
+  # fork-only measurement harness (agarg21): dispatch only; upstream also runs on push/pull_request to main
   workflow_dispatch:  # Allows manual trigger
 
 # A new push to the same PR supersedes the run in flight — there is no point
